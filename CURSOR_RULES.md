@@ -4,13 +4,13 @@ Always apply this guidance when working in this repository.
 
 ## Overview
 
-This repo connects Cursor to Snowflake account `QNKEIAF-UH49076` (host `QNKEIAF-UH49076.snowflakecomputing.com`) using a programmatic access token (PAT). Session context:
+This repo connects Cursor to Snowflake account `AZBWVHR-QE89977` (host `AZBWVHR-QE89977.snowflakecomputing.com`) using a programmatic access token (PAT). Session context:
 
 - User: `DANZAG88`
 - Role: `ACCOUNTADMIN`
 - Warehouse: `COMPUTE_WH` (always set; SQL fails without a warehouse)
 - Database: `SNOWFLAKE_LEARNING_DB`
-- Schema: `TEST_SNOWFLAKEDB`
+- Schema: `TEST2`
 
 Primary paths:
 
@@ -37,17 +37,17 @@ SQL setup scripts: `authentication.sql`, `DB_Setup.sql`, `email_integration.sql`
 
 Account URLs:
 
-- Snowsight / API host: `https://QNKEIAF-UH49076.snowflakecomputing.com`
-- SQL statements: `https://QNKEIAF-UH49076.snowflakecomputing.com/api/v2/statements`
-- Cortex chat: `https://QNKEIAF-UH49076.snowflakecomputing.com/api/v2/cortex/v1/chat/completions`
-- Managed MCP (after `CREATE MCP SERVER`): `https://QNKEIAF-UH49076.snowflakecomputing.com/api/v2/databases/<DATABASE>/schemas/<SCHEMA>/mcp-servers/<SERVER_NAME>`
+- Snowsight / API host: `https://AZBWVHR-QE89977.snowflakecomputing.com`
+- SQL statements: `https://AZBWVHR-QE89977.snowflakecomputing.com/api/v2/statements`
+- Cortex chat: `https://AZBWVHR-QE89977.snowflakecomputing.com/api/v2/cortex/v1/chat/completions`
+- Managed MCP (after `CREATE MCP SERVER`): `https://AZBWVHR-QE89977.snowflakecomputing.com/api/v2/databases/<DATABASE>/schemas/<SCHEMA>/mcp-servers/<SERVER_NAME>`
 
 ## MCP connections
 
 Cursor MCP config is `mcp.json`:
 
 - Server name: `snowflake`
-- `url`: `https://QNKEIAF-UH49076.snowflakecomputing.com`
+- `url`: `https://AZBWVHR-QE89977.snowflakecomputing.com`
 - `stateless_http`: `true`
 - Headers: `Authorization: Bearer ${SNOWFLAKE_PAT}`, `X-Snowflake-Authorization-Token-Type: PROGRAMMATIC_ACCESS_TOKEN`
 
@@ -102,10 +102,10 @@ MCP-style tool arguments:
 
 ```json
 {
-  "statement": "SHOW TABLES IN SCHEMA SNOWFLAKE_LEARNING_DB.TEST_SNOWFLAKEDB",
+  "statement": "SHOW TABLES IN SCHEMA SNOWFLAKE_LEARNING_DB.TEST2",
   "warehouse": "COMPUTE_WH",
   "database": "SNOWFLAKE_LEARNING_DB",
-  "schema": "TEST_SNOWFLAKEDB",
+  "schema": "TEST2",
   "role": "ACCOUNTADMIN"
 }
 ```
@@ -142,7 +142,7 @@ Discover objects:
 ```sql
 SHOW DATABASES;
 SHOW SCHEMAS IN DATABASE SNOWFLAKE_LEARNING_DB;
-SHOW TABLES IN SCHEMA SNOWFLAKE_LEARNING_DB.TEST_SNOWFLAKEDB;
+SHOW TABLES IN SCHEMA SNOWFLAKE_LEARNING_DB.TEST2;
 SHOW TABLES IN SCHEMA SHARED_DB.PUBLIC;
 ```
 
@@ -151,7 +151,7 @@ Catalog search:
 ```sql
 SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE
 FROM SNOWFLAKE_LEARNING_DB.INFORMATION_SCHEMA.TABLES
-WHERE TABLE_SCHEMA = 'TEST_SNOWFLAKEDB'
+WHERE TABLE_SCHEMA = 'TEST2'
 ORDER BY TABLE_NAME;
 
 SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT
@@ -202,7 +202,7 @@ WHERE EMAIL_ADDRESS = 'replace-with-verified-user@example.com'
 
 1. Confirm `SNOWFLAKE_PAT` is set and MCP `snowflake` is connected (or use `python3 SnowflakeDB` / SQL API).
 2. `execute_sql`: `SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_WAREHOUSE(), CURRENT_DATABASE(), CURRENT_SCHEMA()`.
-3. Search: `SHOW TABLES` / `INFORMATION_SCHEMA` in `SNOWFLAKE_LEARNING_DB.TEST_SNOWFLAKEDB` and `SHARED_DB.PUBLIC`.
+3. Search: `SHOW TABLES` / `INFORMATION_SCHEMA` in `SNOWFLAKE_LEARNING_DB.TEST2` and `SHARED_DB.PUBLIC`.
 4. Fetch: `SELECT` from the key tables below with explicit filters (`IS_ACTIVE`, `ENVIRONMENT`, `STATUS_SCOPE`).
 5. Mutate only with fully qualified names and a WHERE clause that matches the composite key when updating `EMAIL_RECIPIENTS`.
 6. Email: load recipients from `EMAIL_RECIPIENTS`, then `SYSTEM$SEND_EMAIL` via `TEST_EMAIL_INTEGRATION`.
@@ -213,7 +213,7 @@ WHERE EMAIL_ADDRESS = 'replace-with-verified-user@example.com'
 | Table | Purpose |
 |---|---|
 | `SHARED_DB.PUBLIC.EMAIL_RECIPIENTS` | Notification list. PK: `(EMAIL_ADDRESS, INTEGRATION_SCOPE, ENVIRONMENT, STATUS_SCOPE)`. Defaults: `INTEGRATION_SCOPE='ALL'`, `RECIPIENT_TYPE='TO'`, `IS_ACTIVE=TRUE`, `ENVIRONMENT='Live'`, `STATUS_SCOPE='All'`, `SEND_DAYS='All'`. |
-| `SNOWFLAKE_LEARNING_DB.TEST_SNOWFLAKEDB.*` | Primary app/schema for this test project. List with `SHOW TABLES` before querying. |
+| `SNOWFLAKE_LEARNING_DB.TEST2.*` | Primary app/schema for this test project. List with `SHOW TABLES` before querying. |
 | `SNOWFLAKE_LEARNING_DB.INFORMATION_SCHEMA.*` | Catalog for learning DB. |
 | `SHARED_DB.INFORMATION_SCHEMA.*` | Catalog for shared DB. |
 

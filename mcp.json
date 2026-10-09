@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "snowflake": {
-      "url": "https://QNKEIAF-UH49076.snowflakecomputing.com",
+      "url": "https://AZBWVHR-QE89977.snowflakecomputing.com",
       "stateless_http": true,
       "headers": {
         "Authorization": "Bearer ${SNOWFLAKE_PAT}",

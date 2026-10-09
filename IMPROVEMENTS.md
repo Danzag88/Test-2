@@ -5,7 +5,7 @@ Suggested next steps for this Snowflake + Cursor test project. Ordered by impact
 ## Security
 
 1. **Rotate any PAT that was pasted into `SnowflakeDB` or chat.** Create a new token in Snowsight, put it only in `.env` as `SNOWFLAKE_PAT`, then drop the old token.
-2. **Stop using `ACCOUNTADMIN` for MCP and the SQL API.** Create a dedicated role (for example `MCP_ROLE`) with USAGE/SELECT on `SNOWFLAKE_LEARNING_DB.TEST_SNOWFLAKEDB` and `SHARED_DB.PUBLIC.EMAIL_RECIPIENTS`, USAGE on `COMPUTE_WH` and `TEST_EMAIL_INTEGRATION`, and restrict the PAT with `ROLE_RESTRICTION`.
+2. **Stop using `ACCOUNTADMIN` for MCP and the SQL API.** Create a dedicated role (for example `MCP_ROLE`) with USAGE/SELECT on `SNOWFLAKE_LEARNING_DB.TEST2` and `SHARED_DB.PUBLIC.EMAIL_RECIPIENTS`, USAGE on `COMPUTE_WH` and `TEST_EMAIL_INTEGRATION`, and restrict the PAT with `ROLE_RESTRICTION`.
 3. **Tighten `MCP_EXTERNAL_ACCESS_RULE`.** `0.0.0.0/0` allows every IPv4 address. Replace it with your office/home/VPN CIDRs.
 4. **Apply the network policy to the MCP user only**, not `ALTER ACCOUNT SET NETWORK_POLICY`, unless you intend to lock the whole account.
 5. **Keep secrets out of `mcp.json`.** Continue using `${SNOWFLAKE_PAT}`. Never commit `.env`.
@@ -14,7 +14,7 @@ Suggested next steps for this Snowflake + Cursor test project. Ordered by impact
 ## Connectivity
 
 1. **Point MCP at the managed server path** after `CREATE MCP SERVER`, not only the account host:
-   `https://QNKEIAF-UH49076.snowflakecomputing.com/api/v2/databases/<DB>/schemas/<SCHEMA>/mcp-servers/<NAME>`
+   `https://AZBWVHR-QE89977.snowflakecomputing.com/api/v2/databases/<DB>/schemas/<SCHEMA>/mcp-servers/<NAME>`
 2. **Load `.env` in `SnowflakeDB`** (parse the file or use `python-dotenv`) so `python3 SnowflakeDB` works without `source .env`.
 3. **Set a default warehouse** on user `DANZAG88` or the MCP role (`ALTER USER ... SET DEFAULT_WAREHOUSE = COMPUTE_WH`) so SQL does not fail when none is selected in Snowsight.
 4. **Copy `mcp.json` to `.cursor/mcp.json`** if Cursor does not pick up the repo-root file.
@@ -25,7 +25,7 @@ Suggested next steps for this Snowflake + Cursor test project. Ordered by impact
 1. **Create `SHARED_DB.PUBLIC.EMAIL_RECIPIENTS`** from the agreed DDL and keep it in a versioned `.sql` file (it is not in the repo yet).
 2. **Replace the email placeholder** in `email_integration.sql` with a verified Snowflake user address before enabling sends.
 3. **Grant SELECT (and INSERT/UPDATE if needed)** on `EMAIL_RECIPIENTS` to the MCP role.
-4. **Create the MCP server object** in `SNOWFLAKE_LEARNING_DB.TEST_SNOWFLAKEDB` with `SYSTEM_EXECUTE_SQL` (and Cortex tools if required).
+4. **Create the MCP server object** in `SNOWFLAKE_LEARNING_DB.TEST2` with `SYSTEM_EXECUTE_SQL` (and Cortex tools if required).
 5. **Avoid `CREATE OR REPLACE TABLE` on populated tables.** Use `CREATE TABLE IF NOT EXISTS` or migrations.
 
 ## Application code
@@ -56,4 +56,4 @@ Suggested next steps for this Snowflake + Cursor test project. Ordered by impact
 1. Rotate PAT; put it in `.env` only.
 2. Finish network policy + authentication policy in Snowsight (`authentication.sql`).
 3. Teach `SnowflakeDB` to load `.env` and succeed at the session query.
-4. Check MCP URL and warehouse, then fetch `TEST_SNOWFLAKEDB` / `EMAIL_RECIPIENTS`.
+4. Check MCP URL and warehouse, then fetch `TEST2` / `EMAIL_RECIPIENTS`.
