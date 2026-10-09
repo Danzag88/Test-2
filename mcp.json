@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "snowflake": {
+      "url": "https://QNKEIAF-UH49076.snowflakecomputing.com",
+      "stateless_http": true,
+      "headers": {
+        "Authorization": "Bearer ${SNOWFLAKE_PAT}",
+        "X-Snowflake-Authorization-Token-Type": "PROGRAMMATIC_ACCESS_TOKEN",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+    }
+  }
+}

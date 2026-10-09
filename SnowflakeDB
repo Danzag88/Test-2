@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""Fetch data from SNOWFLAKE_LEARNING_DB.TEST_SNOWFLAKEDB via the Snowflake SQL API.
+
+Authentication: set SNOWFLAKE_PAT in the environment. Do not put the token in this file.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+import time
+import urllib.error
+import urllib.request
+from typing import Any
+
+ACCOUNT_URL = "https://QNKEIAF-UH49076.snowflakecomputing.com"
+USER = "DANZAG88"
+ROLE = "ACCOUNTADMIN"
+WAREHOUSE = "COMPUTE_WH"
+DATABASE = "SNOWFLAKE_LEARNING_DB"
+SCHEMA = "TEST_SNOWFLAKEDB"
+SQL_API = f"{ACCOUNT_URL}/api/v2/statements"
+ROW_LIMIT = 1000
+
+
+def pat() -> str:
+    token = os.environ.get("SNOWFLAKE_PAT", "").strip()
+    if not token:
+        print(
+            "SNOWFLAKE_PAT is not set. Export it in this terminal:\n"
+            "  export SNOWFLAKE_PAT='your-token-secret'",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return token
+
+
+def headers(token: str) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {token}",
+        "X-Snowflake-Authorization-Token-Type": "PROGRAMMATIC_ACCESS_TOKEN",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "cursor-test-snowflakedb/1.0",
+    }
+
+
+def request(url: str, token: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
+    data = None if body is None else json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers=headers(token), method="POST" if body else "GET")
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            raw = resp.read().decode("utf-8")
+            return json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"HTTP {exc.code} from {url}: {detail}") from exc
+
+
+def wait_for_statement(token: str, payload: dict[str, Any]) -> dict[str, Any]:
+    code = payload.get("code")
+    handle = payload.get("statementHandle")
+    if code in (None, "090001", "333334") or payload.get("statementStatusUrl"):
+        # 090001 = success; other codes may mean still running
+        status = (payload.get("message") or "").lower()
+        if payload.get("data") is not None and code in (None, "090001"):
+            return payload
+        if handle and ("running" in status or code in ("333334", "333333")):
+            for _ in range(60):
+                time.sleep(1)
+                payload = request(f"{SQL_API}/{handle}", token)
+                if payload.get("data") is not None or payload.get("code") == "090001":
+                    return payload
+    return payload
+
+
+def execute_sql(token: str, statement: str) -> dict[str, Any]:
+    payload = request(
+        f"{SQL_API}?async=false",
+        token,
+        {
+            "statement": statement,
+            "timeout": 60,
+            "warehouse": WAREHOUSE,
+            "database": DATABASE,
+            "schema": SCHEMA,
+            "role": ROLE,
+        },
+    )
+    return wait_for_statement(token, payload)
+
+
+def rows_as_dicts(result: dict[str, Any]) -> list[dict[str, Any]]:
+    metadata = result.get("resultSetMetaData") or {}
+    columns = [col.get("name") for col in metadata.get("rowType", [])]
+    data = result.get("data") or []
+    out: list[dict[str, Any]] = []
+    for row in data:
+        if columns and isinstance(row, list):
+            out.append(dict(zip(columns, row)))
+        else:
+            out.append({"value": row})
+    return out
+
+
+def list_tables(token: str) -> list[str]:
+    result = execute_sql(
+        token,
+        f"SHOW TABLES IN SCHEMA {DATABASE}.{SCHEMA}",
+    )
+    names: list[str] = []
+    for row in rows_as_dicts(result):
+        name = row.get("name") or row.get("NAME")
+        if not name:
+            # SHOW TABLES column order: created_on, name, database_name, schema_name, ...
+            values = list(row.values())
+            if len(values) > 1:
+                name = values[1]
+        if name:
+            names.append(str(name))
+    return names
+
+
+def fetch_table(token: str, table: str) -> list[dict[str, Any]]:
+    ident = f"{DATABASE}.{SCHEMA}.{table}"
+    result = execute_sql(token, f"SELECT * FROM {ident} LIMIT {ROW_LIMIT}")
+    return rows_as_dicts(result)
+
+
+def main() -> None:
+    token = pat()
+    session = execute_sql(
+        token,
+        "SELECT CURRENT_USER() AS user_name, CURRENT_ROLE() AS role_name, "
+        "CURRENT_WAREHOUSE() AS warehouse, CURRENT_DATABASE() AS database_name, "
+        "CURRENT_SCHEMA() AS schema_name",
+    )
+    tables = list_tables(token)
+    dump: dict[str, Any] = {
+        "account_url": ACCOUNT_URL,
+        "user": USER,
+        "role": ROLE,
+        "warehouse": WAREHOUSE,
+        "database": DATABASE,
+        "schema": SCHEMA,
+        "session": rows_as_dicts(session),
+        "tables": tables,
+        "data": {},
+    }
+    for table in tables:
+        dump["data"][table] = fetch_table(token, table)
+    json.dump(dump, sys.stdout, indent=2)
+    sys.stdout.write("\n")
+
+
+if __name__ == "__main__":
+    main()

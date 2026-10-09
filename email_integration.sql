@@ -1,0 +1,22 @@
+-- Email notification integration for this test project.
+-- Run in a Snowsight worksheet as ACCOUNTADMIN.
+-- Recipients must be verified email addresses on Snowflake users in this account.
+
+USE ROLE ACCOUNTADMIN;
+USE WAREHOUSE COMPUTE_WH;
+USE DATABASE SNOWFLAKE_LEARNING_DB;
+USE SCHEMA TEST_SNOWFLAKEDB;
+
+CREATE OR REPLACE NOTIFICATION INTEGRATION TEST_EMAIL_INTEGRATION
+  TYPE = EMAIL
+  ENABLED = TRUE
+  ALLOWED_RECIPIENTS = (
+    'replace-with-verified-user@example.com'
+  )
+  DEFAULT_SUBJECT = 'Snowflake Test Notification'
+  COMMENT = 'Email integration for TEST_SNOWFLAKEDB notifications';
+
+GRANT USAGE ON INTEGRATION TEST_EMAIL_INTEGRATION TO ROLE PUBLIC;
+
+-- SHOW INTEGRATIONS LIKE 'TEST_EMAIL_INTEGRATION';
+-- DESC NOTIFICATION INTEGRATION TEST_EMAIL_INTEGRATION;
